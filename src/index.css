@@ -1,14 +1,43 @@
 @import "tailwindcss";
 
 @theme {
+  /* Font Families */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Color System */
+  --color-bg-primary: #0a0a0a;
+  --color-bg-secondary: #121212;
+  --color-surface-primary: #18181b; /* zinc-900 */
+  --color-surface-hover: #27272a; /* zinc-800 */
+
+  --color-border-subtle: #27272a; /* zinc-800 */
+  --color-border-strong: #3f3f46; /* zinc-700 */
+
+  --color-text-primary: #fafafa; /* zinc-50 */
+  --color-text-secondary: #a1a1aa; /* zinc-400 */
+  --color-text-muted: #71717a; /* zinc-500 */
+
+  --color-accent-primary: #3b82f6; /* blue-500 */
+  --color-accent-hover: #2563eb; /* blue-600 */
+  --color-success: #10b981; /* emerald-500 */
+  --color-warning: #f59e0b; /* amber-500 */
+  --color-error: #f87171; /* red-400 */
 }
 
 @layer base {
-  body {
-    @apply bg-[#0a0a0a] text-zinc-300 antialiased;
+  :root {
+    --bg-primary: #0a0a0a;
+    --text-primary: #fafafa;
   }
 
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    @apply antialiased;
+    font-family: var(--font-sans);
+  }
+
+  /* Custom Scrollbar - Minimal & Elegant */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
@@ -22,18 +51,44 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #52525b;
   }
+
+  /* Typography Hierarchy overrides if needed */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply tracking-tight font-medium;
+  }
 }
 
 @layer components {
   .glass-panel {
-    @apply bg-zinc-900/80 border border-zinc-800/40 backdrop-blur-md;
+    @apply bg-surface-primary/80 border border-border-subtle backdrop-blur-md;
   }
 
   .architect-accent {
-    @apply border-l-4 border-blue-500;
+    @apply border-l-4 border-accent-primary;
   }
 
   .builder-accent {
-    @apply border-l-4 border-emerald-500;
+    @apply border-l-4 border-success;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-accent-primary text-white hover:bg-accent-hover transition-colors rounded-md px-4 py-2 font-medium;
+  }
+  .btn-secondary {
+    @apply bg-surface-primary border border-border-strong text-text-primary hover:bg-surface-hover transition-colors rounded-md px-4 py-2 font-medium;
+  }
+  .btn-ghost {
+    @apply hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors rounded-md px-3 py-1.5 font-medium;
+  }
+
+  /* Inputs */
+  .input-base {
+    @apply bg-bg-secondary border border-border-subtle rounded-md text-text-primary px-3 py-2 focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary transition-shadow duration-200;
   }
 }

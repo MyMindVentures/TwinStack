@@ -1,4 +1,4 @@
-import { UserRole } from '../types';
+import { UserRole } from "../types";
 
 export interface AuthUser {
   uid: string;
@@ -17,7 +17,7 @@ class AuthService {
 
   async checkSession() {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await fetch("/api/auth/me");
       if (res.ok) {
         const data = await res.json();
         this.setUser(data.user);
@@ -31,46 +31,50 @@ class AuthService {
 
   private setUser(user: AuthUser | null) {
     this.user = user;
-    this.listeners.forEach(l => l(user));
+    this.listeners.forEach((l) => l(user));
   }
 
   onAuthStateChanged(callback: (user: AuthUser | null) => void) {
     this.listeners.push(callback);
     callback(this.user);
     return () => {
-      this.listeners = this.listeners.filter(l => l !== callback);
+      this.listeners = this.listeners.filter((l) => l !== callback);
     };
   }
 
-  async login(credentials: { username?: string; email?: string; password?: string }) {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials)
+  async login(credentials: {
+    username?: string;
+    email?: string;
+    password?: string;
+  }) {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
     });
-    
+
     if (!res.ok) {
       const data = await res.json();
-      throw new Error(data.error || 'Login failed');
+      throw new Error(data.error || "Login failed");
     }
-    
+
     const data = await res.json();
     this.setUser(data.user);
     return data.user;
   }
 
   async signup(email: string, pass: string, profile: any) {
-    const res = await fetch('/api/auth/guest/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass, profile })
+    const res = await fetch("/api/auth/guest/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: pass, profile }),
     });
-    
+
     if (!res.ok) {
       const data = await res.json();
-      throw new Error(data.error || 'Signup failed');
+      throw new Error(data.error || "Signup failed");
     }
-    
+
     const data = await res.json();
     this.setUser(data.user);
     return data.user;
@@ -78,15 +82,15 @@ class AuthService {
 
   async logout() {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch("/api/auth/logout", { method: "POST" });
     } finally {
       this.setUser(null);
     }
   }
 
   async acceptTerms() {
-    const res = await fetch('/api/terms/accept', { method: 'POST' });
-    if (!res.ok) throw new Error('Failed to accept terms');
+    const res = await fetch("/api/terms/accept", { method: "POST" });
+    if (!res.ok) throw new Error("Failed to accept terms");
   }
 
   getCurrentUser() {

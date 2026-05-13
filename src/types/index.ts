@@ -1,4 +1,8 @@
-export type UserRole = 'Architect' | 'Builder' | 'Vibecoder Guest' | 'Subscribed User';
+export type UserRole =
+  | "Architect"
+  | "Builder"
+  | "Vibecoder Guest"
+  | "Subscribed User";
 
 export interface Project {
   id: string;
@@ -14,7 +18,7 @@ export interface Request {
   nonTechDescription: string;
   techDescription: string;
   timestamp: any; // Firestore Timestamp
-  status: 'draft' | 'approved';
+  status: "draft" | "approved";
 }
 
 export interface UserProfile {
