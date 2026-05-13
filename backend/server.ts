@@ -93,15 +93,28 @@ function seedDatabase() {
     password: "TwinStack_Builder!2026_Forge#Vertex"
   };
 
+  const subscriber = {
+    id: "subscriber-id",
+    username: "subscriber",
+    email: "subscriber@example.com",
+    role: "Subscribed User",
+    password: "password"
+  };
+
   const insertUser = db.prepare(`
-    INSERT OR IGNORE INTO users (id, username, role, password_hash)
-    VALUES (?, ?, ?, ?)
+    INSERT OR IGNORE INTO users (id, username, email, role, password_hash)
+    VALUES (?, ?, ?, ?, ?)
   `);
 
   for (const user of [architect, builder]) {
     const hash = bcrypt.hashSync(user.password, 10);
-    insertUser.run(user.id, user.username, user.role, hash);
+    insertUser.run(user.id, user.username, null, user.role, hash);
   }
+
+  const subHash = bcrypt.hashSync(subscriber.password, 10);
+  insertUser.run(subscriber.id, subscriber.username, subscriber.email, subscriber.role, subHash);
+
+
 
   // Seed default project
   const insertProject = db.prepare(`
@@ -363,10 +376,96 @@ async function startServer() {
   // Projects API
   appExpress.get("/api/projects", (req, res) => {
     const user = (req.session as any).user;
-    console.log("DEBUG(GET): User in session:", user);
     if (!user) return res.status(401).json({ error: "Not authenticated" });
     
     try {
+      // Ensure TwinStack project exists
+      const twinstackExists = db.prepare("SELECT id FROM projects WHERE slug = 'twinstack' OR id = 'twinstack-default'").get();
+      if (!twinstackExists) {
+        {
+          const existingRow = db.prepare("PRAGMA table_info(projects)").all() as any[];
+          const columns = existingRow.map(c => c.name);
+          if (!columns.includes('is_default_public_project')) {
+            db.exec(`ALTER TABLE projects ADD COLUMN is_default_public_project INTEGER DEFAULT 0;`);
+          }
+          if (!columns.includes('protected_from_deletion')) {
+            db.exec(`ALTER TABLE projects ADD COLUMN protected_from_deletion INTEGER DEFAULT 0;`);
+          }
+        }
+
+        db.prepare(`
+          INSERT INTO projects (id, slug, title, description, owner, type, visibility, status, created_by_role, is_public_global_project, always_visible, architect_id, is_default_public_project, protected_from_deletion)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          "twinstack-default",
+          "twinstack",
+          "TwinStack",
+          "TwinStack is the official build-in-public project where users can follow how Parallax Studio improves the platform in real time.",
+          "Parallax Studio",
+          "build-in-public",
+          "public-read",
+          "active",
+          "architect",
+          1,
+          1,
+          "architect-id",
+          1,
+          1
+        );
+      } else {
+        // Force update flags on existing TwinStack project to ensure visibility
+        db.prepare(`
+          UPDATE projects 
+          SET 
+            title = 'TwinStack',
+            slug = 'twinstack',
+            description = 'TwinStack is the official build-in-public project where users can follow how Parallax Studio improves the platform in real time.',
+            owner = 'Parallax Studio',
+            type = 'build-in-public',
+            visibility = 'public-read',
+            status = 'active',
+            is_public_global_project = 1, 
+            always_visible = 1
+          WHERE slug = 'twinstack' OR id = 'twinstack-default'
+        `).run();
+      }
+
+      // Also seed the 10 requests if missing
+      const requestCount = db.prepare("SELECT COUNT(*) as count FROM requests WHERE project_id = 'twinstack-default'").get();
+      if ((requestCount as any).count === 0) {
+        const insertRequest = db.prepare(`
+          INSERT OR IGNORE INTO requests (id, project_id, non_tech_description, tech_description, status, timestamp, implemented)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        
+        insertRequest.run(
+          "welcome-request-twinstack",
+          "twinstack-default",
+          "Welcome to TwinStack build-in-public. Follow how The Architect and The Builder improve this platform in real time.",
+          "Initialize default TwinStack public project with guest-readable request queue and role-based access.",
+          "approved",
+          new Date().toISOString(),
+          1
+        );
+
+        const featuredRequests = [
+          { id: "feat-1", nonTech: "Add fixed login cards for The Architect, The Builder and Vibecoder Guest.", tech: "Implement role-based login entry with separate access flows for architect, builder and vibecoder guest." },
+          { id: "feat-2", nonTech: "Add dashboard where internal users can view app projects and create new concepts.", tech: "Implement project dashboard with project list, active project selection and new project creation modal." },
+          { id: "feat-3", nonTech: "Let The Architect create a new app concept with title and description.", tech: "Add modal with title input and 1500-character description field linked to project creation." },
+          { id: "feat-4", nonTech: "Show request input on the left and Builder queue on the right inside each project.", tech: "Implement responsive splitview layout with request composer and approved request queue." },
+          { id: "feat-5", nonTech: "Convert raw Architect requests into clear non-technical and technical descriptions.", tech: "Add AI structuring step returning max 250-char nonTechnicalDescription and max 250-char technicalDescription." },
+          { id: "feat-6", nonTech: "Let The Architect approve structured requests before they appear for The Builder.", tech: "Add approve flow that saves approved request cards to the project queue with timestamp." },
+          { id: "feat-7", nonTech: "Notify The Builder when a new approved request is added.", tech: "Implement new request popup for builder role triggered by approved request creation." },
+          { id: "feat-8", nonTech: "Require guests to accept terms and create a profile before viewing TwinStack.", tech: "Add terms acceptance, guest account creation and vibecoder profile form with photo and social links." },
+          { id: "feat-9", nonTech: "Let Vibecoder Guests follow the TwinStack project in real time without editing anything.", tech: "Restrict guest role to read-only access for projectSlug twinstack and show request cards with fork/branch buttons." },
+          { id: "feat-10", nonTech: "Add a professional landing page, founder story, copyright, terms and support section.", tech: "Implement landing page sections, legal pages, copyright notice, terms flow and support/donation CTA." }
+        ];
+
+        for (const req of featuredRequests) {
+          insertRequest.run(req.id, "twinstack-default", req.nonTech, req.tech, "approved", new Date().toISOString(), 1);
+        }
+      }
+
       const projects = db.prepare(`
         SELECT 
           id, slug, title, description, owner, type, visibility, 
@@ -376,20 +475,21 @@ async function startServer() {
           architect_id as architectId, 
           created_at as createdAt 
         FROM projects 
+        WHERE is_public_global_project = 1 OR slug = 'twinstack' OR owner = ? OR architect_id = ? OR ? = 'Architect' OR ? = 'Builder'
         ORDER BY always_visible DESC, created_at DESC
-      `).all();
+      `).all(user.uid, user.uid, user.role, user.role);
+
       res.json(projects);
     } catch (error) {
+      console.error(error);
       res.status(500).json({ error: "Failed to fetch projects" });
     }
   });
 
   appExpress.post("/api/projects", (req, res) => {
     const user = (req.session as any).user;
-    console.log("DEBUG: User in session:", user);
-    if (!user || user.role !== "Architect") {
-      console.log("DEBUG: Role check failed:", user ? user.role : "No user");
-      return res.status(403).json({ error: "Only Architects can create projects" });
+    if (!user || (user.role !== "Architect" && user.role !== "Subscribed User")) {
+      return res.status(403).json({ error: "Unauthorized role" });
     }
     
     const { title, description, visibility } = req.body;
@@ -398,7 +498,9 @@ async function startServer() {
       db.prepare(`
         INSERT INTO projects (id, slug, title, description, owner, type, visibility, status, created_by_role, is_public_global_project, always_visible, architect_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, title.toLowerCase().replace(/\s+/g, '-'), title, description, "Parallax Studio", "concept", visibility, "active", "Architect", 0, 0, user.uid);
+      `).run(id, title.toLowerCase().replace(/\s+/g, '-'), title, description, user.role === "Architect" ? "Parallax Studio" : "Private User", "concept", visibility, "active", user.role, 0, 0, user.uid);
+
+
       
       const project = db.prepare(`
         SELECT 
@@ -446,7 +548,7 @@ async function startServer() {
     if (!user) return res.status(401).json({ error: "Not authenticated" });
     
     try {
-      const project = db.prepare("SELECT id FROM projects WHERE id = ? OR slug = ?").get(req.params.projectId, req.params.projectId);
+      const project: any = db.prepare("SELECT id FROM projects WHERE id = ? OR slug = ?").get(req.params.projectId, req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
 
       const requests = db.prepare(`
@@ -470,24 +572,33 @@ async function startServer() {
     if (!user || user.role !== "Architect") return res.status(403).json({ error: "Only Architects can create requests" });
     
     const { nonTechDescription, techDescription } = req.body;
+    if (!nonTechDescription || !techDescription) {
+       return res.status(400).json({ error: "Descriptions are required." });
+    }
+
     try {
+      const project: any = db.prepare("SELECT id FROM projects WHERE id = ? OR slug = ?").get(req.params.projectId, req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
       const id = generateId();
       db.prepare(`
         INSERT INTO requests (id, project_id, non_tech_description, tech_description, status)
         VALUES (?, ?, ?, ?, ?)
-      `).run(id, req.params.projectId, nonTechDescription, techDescription, "pending");
+      `).run(id, project.id, nonTechDescription, techDescription, "pending");
+
       
       const requestItem = db.prepare(`
         SELECT 
           id, project_id as projectId, 
           non_tech_description as nonTechDescription, 
           tech_description as techDescription, 
-          status, timestamp 
+          status, timestamp, implemented
         FROM requests 
         WHERE id = ?
       `).get(id);
       res.json(requestItem);
     } catch (error) {
+      console.error("Failed to create request:", error);
       res.status(500).json({ error: "Failed to create request" });
     }
   });

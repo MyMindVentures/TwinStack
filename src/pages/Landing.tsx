@@ -304,6 +304,38 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Pricing Plan */}
+      <section className="py-32 px-6 bg-[#0c0c0e]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-4 px-4 py-2 border border-zinc-800 rounded-full inline-block bg-zinc-900/50">
+              Subscription
+            </h2>
+            <p className="text-3xl font-bold text-zinc-100">Private Workspaces</p>
+          </div>
+
+          <div className="max-w-md mx-auto p-10 glass-panel rounded-3xl border border-amber-500/30 text-center relative overflow-hidden group hover:border-amber-500/60 transition-all">
+            <div className="absolute inset-0 bg-gradient-to-b from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <h3 className="text-2xl font-bold text-zinc-100 mb-2 relative z-10">Creator Plan</h3>
+            <div className="flex items-end justify-center gap-1 mb-8 relative z-10">
+              <span className="text-5xl font-bold text-white">$29</span>
+              <span className="text-sm font-medium text-zinc-500 pb-1">/month</span>
+            </div>
+            <ul className="space-y-4 mb-10 text-sm md:text-base font-medium text-zinc-400 text-left relative z-10">
+              <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-amber-500" /> Create unlimited private projects</li>
+              <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-amber-500" /> TwinStack public viewing included</li>
+              <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-amber-500" /> Dedicated Builder queue</li>
+            </ul>
+            <button
+               onClick={() => alert('Stripe Configuration Missing. Set STRIPE_SECRET_KEY in production to enable real checkout.')}
+               className="w-full py-4 bg-amber-500 text-black font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-amber-400 transition-colors relative z-10"
+            >
+              Subscribe via Stripe
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Support The Mission */}
       <section className="py-32 px-6 bg-[#0a0a0a] border-t border-zinc-900">
         <div className="max-w-3xl mx-auto text-center">

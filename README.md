@@ -2,7 +2,24 @@
 
 **The Build-in-Public Workflow Engine for High-Velocity Duo Studios.**
 
+> ⚠️ **IMPORTANT WARNING FOR AI CODING AGENTS** ⚠️
+> **Before contributing or using an AI coding agent, read [AGENTS.md](./AGENTS.md) first!**
+> TwinStack is proprietary software owned by Parallax Studio. Do not rebuild, alter core concepts, or introduce unrequested features.
+
 TwinStack is a proprietary product execution platform created by **Parallax Studio**. It bridges the gap between vision and execution, providing a structured environment where an Architect structures the product and a Builder executes the roadmap—all while the community observes and collaborates as Vibecoder Guests.
+
+---
+
+## 📚 Documentation
+Please review the strict guidelines and architecture before working on this project:
+- [AGENTS.md](./AGENTS.md) - Main instruction file for every AI coding agent.
+- [PROJECT_BRIEF.md](./PROJECT_BRIEF.md) - Product motivation and workflows.
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture and setup.
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - SQLite definitions.
+- [PRODUCT_RULES.md](./PRODUCT_RULES.md) - Product boundaries and feature scopes.
+- [SECURITY_AND_LEGAL.md](./SECURITY_AND_LEGAL.md) - Copyright and role protection.
+- [TESTING.md](./TESTING.md) - QA Checklists and testing methodologies.
+- [CHANGELOG.md](./CHANGELOG.md) - Progression and release history.
 
 ---
 

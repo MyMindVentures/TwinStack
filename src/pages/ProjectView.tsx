@@ -43,9 +43,11 @@ export default function ProjectView({ role }: { role: UserRole }) {
             setTimeout(() => setNotification(null), 5000);
           }
           lastRequestCount.current = approvedReqs.length;
+        } else {
+           console.error("Failed to fetch requests", await reqRes.text());
         }
       } catch (err) {
-        console.error("Fetch data error", err);
+        console.error("Workspace connection error:", err);
       }
     };
 

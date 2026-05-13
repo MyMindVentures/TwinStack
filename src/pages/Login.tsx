@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserRole } from '../types';
-import { PenTool, Hammer, Eye, Lock, ArrowRight, X } from 'lucide-react';
+import { PenTool, Hammer, Eye, Lock, ArrowRight, X, Zap } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { authService } from '../services/authService';
@@ -26,13 +26,14 @@ export default function Login({ onSelectRole }: LoginProps) {
     setFormData({ email: '', password: '' });
   };
 
+  const isInternal = showPasswordModal === 'Architect' || showPasswordModal === 'Builder';
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showPasswordModal) return;
     setLoading(true);
     setError(null);
 
-    const isInternal = showPasswordModal !== 'Vibecoder Guest';
     const credentials: any = { password: formData.password };
     
     if (isInternal) {
@@ -64,7 +65,7 @@ export default function Login({ onSelectRole }: LoginProps) {
         <p className="text-zinc-500 font-medium">Select your profile and sign in to continue</p>
       </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-6xl">
         <RoleCard 
           role="Architect" 
           icon={<PenTool className="w-8 h-8" />}
@@ -85,6 +86,13 @@ export default function Login({ onSelectRole }: LoginProps) {
           description="View the build process in real-time"
           color="bg-purple-500"
           onClick={() => handleRoleSelection('Vibecoder Guest')}
+        />
+        <RoleCard 
+          role="Subscribed User" 
+          icon={<Zap className="w-8 h-8" />}
+          description="Create your own private projects"
+          color="bg-amber-500"
+          onClick={() => handleRoleSelection('Subscribed User')}
         />
       </div>
 
@@ -111,7 +119,7 @@ export default function Login({ onSelectRole }: LoginProps) {
 
               <form onSubmit={handleAuth} className="space-y-6">
                 <div className="space-y-4">
-                  {showPasswordModal === 'Vibecoder Guest' && (
+                  {!isInternal && (
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Email Address</label>
                       <input 
@@ -119,17 +127,17 @@ export default function Login({ onSelectRole }: LoginProps) {
                         required
                         value={formData.email}
                         onChange={e => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="vibecoder@example.com"
+                        placeholder={showPasswordModal === 'Vibecoder Guest' ? "vibecoder@example.com" : "subscriber@example.com"}
                         className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-mono"
                       />
                     </div>
                   )}
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                      {showPasswordModal === 'Vibecoder Guest' ? 'Password' : 'Internal Password'}
+                      {isInternal ? 'Internal Password' : 'Password'}
                     </label>
                     <input 
-                      autoFocus={showPasswordModal !== 'Vibecoder Guest'}
+                      autoFocus={isInternal}
                       required
                       type="password"
                       value={formData.password}
@@ -146,7 +154,7 @@ export default function Login({ onSelectRole }: LoginProps) {
                     disabled={loading}
                     className={cn(
                       "w-full py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-2 group",
-                      showPasswordModal === 'Vibecoder Guest' 
+                      !isInternal 
                         ? "bg-purple-600 text-white hover:bg-purple-500" 
                         : "bg-zinc-100 text-black hover:bg-white"
                     )}

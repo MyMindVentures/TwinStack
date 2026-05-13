@@ -1,4 +1,4 @@
-export type UserRole = 'Architect' | 'Builder' | 'Vibecoder Guest';
+export type UserRole = 'Architect' | 'Builder' | 'Vibecoder Guest' | 'Subscribed User';
 
 export interface Project {
   id: string;

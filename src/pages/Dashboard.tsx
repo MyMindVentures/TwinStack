@@ -27,10 +27,7 @@ export default function Dashboard({ role, onLogout }: DashboardProps) {
         credentials: 'include'
       });
       if (res.ok) {
-        let projs = await res.json();
-        if (role === 'Vibecoder Guest') {
-          projs = projs.filter((p: Project) => p.title.toLowerCase().includes('twinstack'));
-        }
+        const projs = await res.json();
         setProjects(projs);
       }
     } catch (err) {
@@ -42,9 +39,7 @@ export default function Dashboard({ role, onLogout }: DashboardProps) {
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting project:", newProject);
     if (!newProject.title || !newProject.description) {
-      console.log("Validation failed: missing fields");
       return;
     }
 
@@ -57,15 +52,15 @@ export default function Dashboard({ role, onLogout }: DashboardProps) {
       });
 
       if (res.ok) {
-        console.log("Project created successfully");
         await fetchProjects();
         setNewProject({ title: '', description: '' });
         setIsModalOpen(false);
       } else {
-        console.error("Failed to create project, status:", res.status);
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Failed to create project:", errorData.error || res.statusText);
       }
     } catch (error) {
-      console.error("Failed to create project", error);
+      console.error("Project creation error:", error);
     }
   };
 
@@ -95,7 +90,7 @@ export default function Dashboard({ role, onLogout }: DashboardProps) {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {role === 'Architect' && (
+        {(role === 'Architect' || role === 'Subscribed User') && (
           <motion.button
             whileHover={{ scale: 1.01, backgroundColor: 'rgba(24, 24, 27, 0.4)' }}
             whileTap={{ scale: 0.99 }}
@@ -113,7 +108,7 @@ export default function Dashboard({ role, onLogout }: DashboardProps) {
           </div>
         ))}
         
-        {!loading && projects.length === 0 && role !== 'Architect' && (
+        {!loading && projects.length === 0 && (role !== 'Architect' && role !== 'Subscribed User') && (
           <div className="md:col-span-2 py-20 text-center text-zinc-600 font-medium italic">
             No projects found. Wait for the Architect to initiate.
           </div>
