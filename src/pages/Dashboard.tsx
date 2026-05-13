@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { db, auth } from '../services/firebase';
 import { Project, UserRole } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/error-handler';
+import { handleFirestoreError, OperationType } from '../services/error-handler';
 import { Plus, LayoutGrid, LogOut, ChevronRight, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';

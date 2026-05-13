@@ -6,7 +6,7 @@ import {
   Target, Twitter, Github, Camera,
   ArrowRight, ArrowLeft, Check, X, Mail, Lock
 } from 'lucide-react';
-import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '../services/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { cn } from '../lib/utils';

@@ -183,6 +183,127 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Why TwinStack Exists */}
+      <section className="py-80 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(168,85,247,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.05),transparent_50%)]" />
+        
+        <div className="max-w-5xl mx-auto relative z-10">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.5 }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/50 border border-zinc-800 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-12">
+              Founder's Vision
+            </div>
+
+            <h2 className="text-5xl md:text-8xl font-bold text-zinc-100 mb-24 tracking-tighter leading-none">
+              Why TwinStack <br className="hidden md:block" /> <span className="text-zinc-500">Exists</span>
+            </h2>
+            
+            <div className="space-y-16 text-xl md:text-2xl text-zinc-400 leading-relaxed font-light max-w-4xl mx-auto">
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+              >
+                TwinStack was born from a real problem.
+              </motion.p>
+              
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+              >
+                The Architect has spent years developing strong app concepts and fighting to attract vibecoders capable of turning those concepts into real products. Despite sharing ideas publicly and pushing constantly on social platforms, many people still underestimate the value of deep product thinking from non-coding founders.
+              </motion.p>
+              
+              <div className="py-24">
+                <div className="flex flex-col items-center">
+                  <div className="h-[2px] w-12 bg-purple-500/30 mb-12" />
+                  <motion.p 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 1, delay: 0.6 }}
+                    className="text-zinc-100 font-bold text-4xl md:text-6xl tracking-tighter italic leading-tight"
+                  >
+                    TwinStack was created as <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Proof of Mind.</span>
+                  </motion.p>
+                  <div className="h-[2px] w-12 bg-blue-500/30 mt-12" />
+                </div>
+              </div>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.8 }}
+              >
+                A live build-in-public system where product architecture, execution requests and real development become visible in real time.
+              </motion.p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-16">
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="text-left p-10 rounded-[2rem] bg-zinc-900/40 border border-zinc-800/10 backdrop-blur-xl transition-all"
+                >
+                  <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.4em] mb-4">Role 01: Architect</p>
+                  <p className="text-3xl font-bold text-zinc-100 tracking-tight">Structures the vision.</p>
+                </motion.div>
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="text-left p-10 rounded-[2rem] bg-zinc-900/40 border border-zinc-800/10 backdrop-blur-xl transition-all"
+                >
+                  <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.4em] mb-4">Role 02: Builder</p>
+                  <p className="text-3xl font-bold text-zinc-100 tracking-tight">Transforms it into software.</p>
+                </motion.div>
+              </div>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 1 }}
+                className="max-w-3xl mx-auto"
+              >
+                Vibecoders can follow the evolution of TwinStack itself, observe the workflow, contribute improvements, fork ideas and potentially become long-term collaborators inside future Parallax Studio ventures.
+              </motion.p>
+              
+              <div className="flex flex-wrap justify-center gap-6 pt-12">
+                {['NDA Agreements', 'Revenue Splits', 'Venture Partnerships'].map((item, i) => (
+                  <motion.span 
+                    key={item}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.2 + (i * 0.1) }}
+                    className="px-6 py-2 rounded-full border border-zinc-800/50 bg-zinc-950/20 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500"
+                  >
+                    {item}
+                  </motion.span>
+                ))}
+              </div>
+
+              <motion.p 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 1.5, duration: 2, ease: [0.16, 1, 0.3, 1] }}
+                className="text-white font-bold text-4xl md:text-7xl mt-56 tracking-tighter leading-[1] max-w-4xl mx-auto"
+              >
+                “TwinStack exists to find the builders who see the vision before the crowd does.”
+              </motion.p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-12 border-t border-zinc-900 bg-[#0a0a0a]">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">

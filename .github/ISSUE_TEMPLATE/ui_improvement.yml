@@ -1,0 +1,16 @@
+name: 🎨 UI Improvement
+description: Suggest a visual or UX refinement
+labels: ["ui-ux"]
+body:
+  - type: textarea
+    id: refinement
+    attributes:
+      label: Proposed Refinement
+      placeholder: How can we make it cleaner?
+    validations:
+      required: true
+  - type: input
+    id: screenshot-url
+    attributes:
+      label: Mockup Link (Optional)
+      placeholder: Figma or Image URL

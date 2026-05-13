@@ -1,0 +1,17 @@
+name: 🚀 Vibecoder Contribution Proposal
+description: For guests wanting to propose a specific collaboration or fork
+labels: ["vibecoder-proposal"]
+body:
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Your Proposal
+      placeholder: What are you building in your fork?
+    validations:
+      required: true
+  - type: input
+    id: github-handle
+    attributes:
+      label: GitHub Handle
+    validations:
+      required: true

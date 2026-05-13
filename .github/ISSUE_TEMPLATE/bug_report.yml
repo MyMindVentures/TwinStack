@@ -1,0 +1,33 @@
+name: 🐛 Bug Report
+description: Report a bug to help us improve TwinStack
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide clear details so we can replicate the issue.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: Describe the bug in detail...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: 1. Go to... 2. Click on...
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Desktop (Chrome)
+        - Desktop (Safari)
+        - Mobile (iOS)
+        - Mobile (Android)
+    validations:
+      required: true

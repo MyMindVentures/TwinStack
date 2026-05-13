@@ -5,10 +5,10 @@ import {
   doc, onSnapshot, collection, query, orderBy, 
   addDoc, serverTimestamp 
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db } from '../services/firebase';
 import { Project, Request, UserRole } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/error-handler';
-import { restructureRequest } from '../lib/gemini';
+import { handleFirestoreError, OperationType } from '../services/error-handler';
+import { restructureRequest } from '../services/gemini';
 import { 
   ArrowLeft, Send, CheckCircle2, 
   Clock, Sparkles, Bell, Hammer, PenTool,

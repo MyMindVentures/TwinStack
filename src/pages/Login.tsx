@@ -4,7 +4,7 @@ import { UserRole } from '../types';
 import { PenTool, Hammer, Eye, Lock, ArrowRight, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { loginWithGoogle, loginWithEmail, db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { loginWithGoogle, loginWithEmail, db, handleFirestoreError, OperationType } from '../services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import bcrypt from 'bcryptjs';
 

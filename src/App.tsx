@@ -7,7 +7,7 @@ import Landing from './pages/Landing';
 import Terms from './pages/Terms';
 import VibecoderSetup from './pages/VibecoderSetup';
 import { UserRole } from './types';
-import { auth } from './lib/firebase';
+import { auth } from './services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function App() {
