@@ -304,6 +304,34 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Support The Mission */}
+      <section className="py-32 px-6 bg-[#0a0a0a] border-t border-zinc-900">
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="space-y-8"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tighter text-zinc-100">Support The Mission</h2>
+            <div className="space-y-6 text-zinc-400 leading-relaxed font-light text-lg">
+              <p>I am currently building TwinStack and future Parallax Studio ventures full-time. While this journey is immensely rewarding, it is currently self-funded during this critical early stage where apps aren't monetized and partnerships are still forming.</p>
+              <p>TwinStack exists as Proof of Mind—a public display of product architecture and execution designed to attract aligned builders. Your support helps keep this vision alive, sustains full-time development, and accelerates the collaborations that will define the future of our studio.</p>
+            </div>
+            <div className="pt-8">
+              <a 
+                href="https://wise.com/pay/me/kevind469"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-8 py-4 bg-zinc-100 text-zinc-900 font-bold rounded-2xl shadow-lg shadow-white/5 hover:bg-white transition-all uppercase tracking-widest text-xs"
+              >
+                Support via Wise
+              </a>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-12 border-t border-zinc-900 bg-[#0a0a0a]">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">

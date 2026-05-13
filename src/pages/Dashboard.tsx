@@ -23,7 +23,9 @@ export default function Dashboard({ role, onLogout }: DashboardProps) {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('/api/projects');
+      const res = await fetch('/api/projects', {
+        credentials: 'include'
+      });
       if (res.ok) {
         let projs = await res.json();
         if (role === 'Vibecoder Guest') {
@@ -40,19 +42,27 @@ export default function Dashboard({ role, onLogout }: DashboardProps) {
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProject.title || !newProject.description) return;
+    console.log("Submitting project:", newProject);
+    if (!newProject.title || !newProject.description) {
+      console.log("Validation failed: missing fields");
+      return;
+    }
 
     try {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ ...newProject, visibility: 'public' })
       });
 
       if (res.ok) {
+        console.log("Project created successfully");
         await fetchProjects();
         setNewProject({ title: '', description: '' });
         setIsModalOpen(false);
+      } else {
+        console.error("Failed to create project, status:", res.status);
       }
     } catch (error) {
       console.error("Failed to create project", error);
