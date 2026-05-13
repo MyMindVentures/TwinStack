@@ -4,9 +4,7 @@ import { UserRole } from '../types';
 import { PenTool, Hammer, Eye, Lock, ArrowRight, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { loginWithGoogle, loginWithEmail, db, handleFirestoreError, OperationType } from '../services/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import bcrypt from 'bcryptjs';
+import { authService } from '../services/authService';
 
 interface LoginProps {
   onSelectRole: (role: UserRole) => void;
@@ -23,15 +21,6 @@ export default function Login({ onSelectRole }: LoginProps) {
   const [error, setError] = useState<string | null>(null);
 
   const handleRoleSelection = async (role: UserRole) => {
-    if (role === 'Vibecoder Guest') {
-      // Show login/signup choice
-      setShowPasswordModal(role);
-      setError(null);
-      setFormData({ email: '', password: '' });
-      return;
-    }
-    
-    // Architect and Builder require password
     setShowPasswordModal(role);
     setError(null);
     setFormData({ email: '', password: '' });
@@ -44,54 +33,21 @@ export default function Login({ onSelectRole }: LoginProps) {
     setError(null);
 
     const isInternal = showPasswordModal !== 'Vibecoder Guest';
-    const username = showPasswordModal === 'Architect' ? 'architect' : 'builder';
-    const loginEmail = isInternal ? `${username}@twinstack.internal` : formData.email;
-    const loginPassword = formData.password;
+    const credentials: any = { password: formData.password };
+    
+    if (isInternal) {
+      credentials.username = showPasswordModal.toLowerCase();
+    } else {
+      credentials.email = formData.email;
+    }
 
     try {
-      if (isInternal) {
-        // Internal flow
-        console.log("Fetching internal user doc for:", username);
-        let userDoc;
-        try {
-          userDoc = await getDoc(doc(db, 'internal_users', username));
-        } catch (err) {
-          handleFirestoreError(err, OperationType.GET, `internal_users/${username}`);
-          return;
-        }
-        
-        if (userDoc.exists()) {
-          console.log("Internal user doc found, verifying hash...");
-          const { passwordHash } = userDoc.data();
-          const isMatch = bcrypt.compareSync(loginPassword, passwordHash);
-          if (!isMatch) throw new Error('Invalid internal credentials');
-        } else {
-          console.log("Internal user doc not found, attempting to seed...");
-          const validPasswords = {
-            'architect': 'TwinStack_Architect!2026_Parallax#Orbit',
-            'builder': 'TwinStack_Builder!2026_Forge#Vertex'
-          };
-          if (loginPassword !== (validPasswords as any)[username]) throw new Error('Invalid internal credentials');
-          
-          try {
-            await setDoc(doc(db, 'internal_users', username), {
-              username, role: showPasswordModal, passwordHash: bcrypt.hashSync(loginPassword, 10), createdAt: serverTimestamp()
-            });
-          } catch (err) {
-            handleFirestoreError(err, OperationType.WRITE, `internal_users/${username}`);
-          }
-          console.log("Seeding successful.");
-        }
-      }
-
-      console.log("Attempting Firebase Auth login with:", loginEmail);
-      // Login to Firebase Auth
-      await loginWithEmail(loginEmail, loginPassword);
+      await authService.login(credentials);
       onSelectRole(showPasswordModal);
       navigate('/dashboard');
     } catch (err: any) {
       console.error("Login failed:", err);
-      setError(err.message || 'Authentication failed');
+      setError(err.message || 'Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

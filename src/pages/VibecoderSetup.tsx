@@ -6,11 +6,9 @@ import {
   Target, Twitter, Github, Camera,
   ArrowRight, ArrowLeft, Check, X, Mail, Lock
 } from 'lucide-react';
-import { db, auth, handleFirestoreError, OperationType } from '../services/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import { UserRole } from '../types';
+import { authService } from '../services/authService';
 
 interface VibecoderSetupProps {
   onSelectRole: (role: UserRole) => void;
@@ -78,28 +76,18 @@ export default function VibecoderSetup({ onSelectRole }: VibecoderSetupProps) {
     setLoading(true);
 
     try {
-      // 1. Create Firebase Auth Account
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
+      const profile = {
+        name: formData.name,
+        country: formData.country,
+        gender: formData.gender,
+        skills: formData.skills,
+        purpose: formData.purpose === "Other (please specify below)" ? formData.customPurpose : formData.purpose,
+        twitter: formData.twitter,
+        github: formData.github,
+        photoUrl: formData.photoUrl || ''
+      };
 
-      // 2. Save Profile
-      try {
-        await setDoc(doc(db, 'vibecoder_profiles', user.uid), {
-          name: formData.name,
-          email: formData.email,
-          country: formData.country,
-          gender: formData.gender,
-          skills: formData.skills,
-          purpose: formData.purpose === "Other (please specify below)" ? formData.customPurpose : formData.purpose,
-          twitter: formData.twitter,
-          github: formData.github,
-          uid: user.uid,
-          photoUrl: formData.photoUrl || user.photoURL || '',
-          createdAt: serverTimestamp()
-        });
-      } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, `vibecoder_profiles/${user.uid}`);
-      }
+      await authService.signup(formData.email, formData.password, profile);
 
       // 3. Set Role & Redirect
       onSelectRole('Vibecoder Guest');

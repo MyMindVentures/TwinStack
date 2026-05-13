@@ -7,70 +7,57 @@ import Landing from './pages/Landing';
 import Terms from './pages/Terms';
 import VibecoderSetup from './pages/VibecoderSetup';
 import { UserRole } from './types';
-import { auth } from './services/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { authService, AuthUser } from './services/authService';
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(
-    localStorage.getItem('selectedRole') as UserRole | null
-  );
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = authService.onAuthStateChanged((u) => {
       setUser(u);
       setLoading(false);
     });
     return unsubscribe;
   }, []);
 
-  const handleRoleSelect = (role: UserRole) => {
-    setSelectedRole(role);
-    localStorage.setItem('selectedRole', role);
+  const handleLogout = async () => {
+    await authService.logout();
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
-        <div className="w-8 h-8 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
       </div>
     );
   }
 
   return (
     <Router>
-      <div className="min-h-screen bg-[#0a0a0a] text-zinc-300 font-sans selection:bg-blue-500/20 selection:text-blue-200">
+      <div className="min-h-screen bg-[#0a0a0a] text-zinc-300 font-sans selection:bg-purple-500/20 selection:text-purple-200">
         <Routes>
           <Route 
             path="/login" 
-            element={
-              (user && selectedRole) 
-                ? <Navigate to="/dashboard" /> 
-                : <Login onSelectRole={handleRoleSelect} />
-            } 
+            element={user ? <Navigate to="/dashboard" /> : <Login onSelectRole={() => {}} />} 
           />
           <Route 
             path="/vibecoder-setup" 
-            element={<VibecoderSetup onSelectRole={handleRoleSelect} />} 
+            element={<VibecoderSetup onSelectRole={() => {}} />} 
           />
           <Route 
             path="/dashboard" 
             element={
-              (user && selectedRole)
-                ? <Dashboard role={selectedRole} onLogout={async () => {
-                    await auth.signOut();
-                    setSelectedRole(null);
-                    localStorage.removeItem('selectedRole');
-                  }} /> 
+              user 
+                ? <Dashboard role={user.role} onLogout={handleLogout} /> 
                 : <Navigate to="/login" />
             } 
           />
           <Route 
             path="/project/:projectId" 
             element={
-              (user && selectedRole) 
-                ? <ProjectView role={selectedRole} /> 
+              user 
+                ? <ProjectView role={user.role} /> 
                 : <Navigate to="/login" />
             } 
           />

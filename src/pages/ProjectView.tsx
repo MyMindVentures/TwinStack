@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  doc, onSnapshot, collection, query, orderBy, 
-  addDoc, serverTimestamp 
-} from 'firebase/firestore';
-import { db } from '../services/firebase';
 import { Project, Request, UserRole } from '../types';
-import { handleFirestoreError, OperationType } from '../services/error-handler';
 import { restructureRequest } from '../services/gemini';
 import { 
   ArrowLeft, Send, CheckCircle2, 
-  Clock, Sparkles, Bell, Hammer, PenTool,
+  Clock, Sparkles, Bell, 
   Code, Eye, GitFork, GitBranch
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -25,46 +19,39 @@ export default function ProjectView({ role }: { role: UserRole }) {
   const [isRestructuring, setIsRestructuring] = useState(false);
   const [draftRequest, setDraftRequest] = useState<{ nonTech: string, tech: string } | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const lastRequestCount = useRef(0);
 
   useEffect(() => {
     if (!projectId) return;
 
-    // Load project metadata
-    const projectUnsub = onSnapshot(doc(db, 'projects', projectId), (snapshot) => {
-      if (snapshot.exists()) {
-        setProject({ id: snapshot.id, ...snapshot.data() } as Project);
+    const fetchData = async () => {
+      try {
+        const [projRes, reqRes] = await Promise.all([
+          fetch(`/api/projects/${projectId}`),
+          fetch(`/api/projects/${projectId}/requests`)
+        ]);
+
+        if (projRes.ok) setProject(await projRes.json());
+        if (reqRes.ok) {
+          const reqs = await reqRes.json();
+          const approvedReqs = reqs.filter((r: Request) => r.status === 'approved');
+          setRequests(approvedReqs);
+
+          if (role === 'Builder' && approvedReqs.length > lastRequestCount.current && lastRequestCount.current !== 0) {
+            const latest = approvedReqs[0];
+            setNotification(latest.nonTechDescription);
+            setTimeout(() => setNotification(null), 5000);
+          }
+          lastRequestCount.current = approvedReqs.length;
+        }
+      } catch (err) {
+        console.error("Fetch data error", err);
       }
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `projects/${projectId}`);
-    });
-
-    // Load requests
-    const q = query(
-      collection(db, 'projects', projectId, 'requests'), 
-      orderBy('timestamp', 'desc')
-    );
-    const requestsUnsub = onSnapshot(q, (snapshot) => {
-      const reqs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Request));
-      const approvedReqs = reqs.filter(r => r.status === 'approved');
-      setRequests(approvedReqs);
-
-      // Builder notification logic
-      if (role === 'Builder' && approvedReqs.length > lastRequestCount.current && lastRequestCount.current !== 0) {
-        const latest = approvedReqs[0];
-        setNotification(latest.nonTechDescription);
-        setTimeout(() => setNotification(null), 5000);
-      }
-      lastRequestCount.current = approvedReqs.length;
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `projects/${projectId}/requests`);
-    });
-
-    return () => {
-      projectUnsub();
-      requestsUnsub();
     };
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000); // Poll every 5s instead of real-time for now
+    return () => clearInterval(interval);
   }, [projectId, role]);
 
   const handleSendRequest = async () => {
@@ -72,33 +59,48 @@ export default function ProjectView({ role }: { role: UserRole }) {
     setIsRestructuring(true);
     setDraftRequest(null);
 
-    const result = await restructureRequest(inputText);
-    setDraftRequest({
-      nonTech: result.nonTechDescription,
-      tech: result.techDescription
-    });
-    setIsRestructuring(false);
+    try {
+      const result = await restructureRequest(inputText);
+      setDraftRequest({
+        nonTech: result.nonTechDescription,
+        tech: result.techDescription
+      });
+    } catch (err) {
+      console.error("Gemini restructuring error", err);
+    } finally {
+      setIsRestructuring(false);
+    }
   };
 
   const handleApprove = async () => {
     if (!draftRequest || !projectId) return;
 
     try {
-      await addDoc(collection(db, 'projects', projectId, 'requests'), {
-        projectId,
-        nonTechDescription: draftRequest.nonTech,
-        techDescription: draftRequest.tech,
-        timestamp: serverTimestamp(),
-        status: 'approved'
+      const res = await fetch(`/api/projects/${projectId}/requests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nonTechDescription: draftRequest.nonTech,
+          techDescription: draftRequest.tech
+        })
       });
-      setDraftRequest(null);
-      setInputText('');
+
+      if (res.ok) {
+        const newReq = await res.json();
+        setRequests(prev => [newReq, ...prev]);
+        setDraftRequest(null);
+        setInputText('');
+      }
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, `projects/${projectId}/requests`);
+      console.error("Failed to create request", error);
     }
   };
 
-  if (!project) return null;
+  if (!project) return (
+    <div className="h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-500 font-bold uppercase tracking-widest text-xs animate-pulse">
+      Connecting to Workspace...
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-screen bg-[#0a0a0a] overflow-hidden">
@@ -127,13 +129,13 @@ export default function ProjectView({ role }: { role: UserRole }) {
             )}>{role}</span>
           </div>
           <div className="w-px h-8 bg-zinc-800 hidden sm:block"></div>
-          <Link to="/dashboard" className="hidden sm:block px-4 py-2 text-xs border border-zinc-700 rounded text-zinc-300 hover:bg-zinc-800 transition-colors">Switch Project</Link>
+          <Link to="/dashboard" className="hidden sm:block px-4 py-2 text-xs border border-zinc-700 rounded text-zinc-300 hover:bg-zinc-800 transition-colors" title="Switch Project">Projects</Link>
         </div>
       </header>
 
-      {/* Main Content - Tablet/Smartphone Split */}
-      <div className="flex flex-col md:flex-row flex-grow overflow-hidden relative">
-        {/* Architect Side (Left/Top) */}
+      {/* Main Content */}
+      <div className="flex flex-col md:flex-row flex-grow overflow-hidden relative text-zinc-300">
+        {/* Architect Side */}
         <div className={cn(
           "w-full md:w-1/2 flex flex-col border-b md:border-b-0 md:border-r border-zinc-800 bg-[#0e0e0e]",
           role === 'Builder' && "hidden md:flex opacity-40 pointer-events-none grayscale-[0.5]",
@@ -145,7 +147,6 @@ export default function ProjectView({ role }: { role: UserRole }) {
                 <Sparkles className="w-4 h-4 text-blue-400" />
                 New Request Input
               </h2>
-              {isRestructuring && <span className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 animate-pulse">Drafting</span>}
             </div>
 
             <div className="flex-grow flex flex-col gap-6">
@@ -208,7 +209,7 @@ export default function ProjectView({ role }: { role: UserRole }) {
           </div>
         </div>
 
-        {/* Builder Side (Right/Bottom) */}
+        {/* Builder Side */}
         <div className={cn(
           "w-full md:w-1/2 flex flex-col bg-[#121212]",
           role === 'Architect' && "hidden md:flex",
@@ -241,13 +242,13 @@ export default function ProjectView({ role }: { role: UserRole }) {
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-tighter">REQ-{request.id.slice(-4)}</div>
+                        <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-tighter">REQ-{String(request.id).slice(-4)}</div>
                         <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">
                           {request.status}
                         </span>
                       </div>
                       <div className="text-[10px] text-zinc-500 font-bold">
-                        {request.timestamp?.toDate ? format(request.timestamp.toDate(), 'MMM d · H:mm') : 'PENDING'}
+                        {request.timestamp ? format(new Date(request.timestamp), 'MMM d · H:mm') : 'PENDING'}
                       </div>
                     </div>
                     
