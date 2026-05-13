@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isStaff() {
+      return isSignedIn() && request.auth.token.email.matches('.*@twinstack\\.internal');
+    }
+
+    // Projects collection
+    match /projects/{projectId} {
+      // Allow reading projects for any authenticated user
+      allow read: if isSignedIn();
+      
+      // Only internal staff can create/edit projects
+      allow write: if isStaff();
+      
+      // Subcollection for requests
+      match /requests/{requestId} {
+        allow read: if isSignedIn();
+        allow write: if isStaff();
+      }
+    }
+
+    // Vibecoder profiles
+    match /vibecoder_profiles/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Internal users (for login verification)
+    match /internal_users/{username} {
+      // Allow read for everyone so they can check hash before login
+      allow read: if true;
+      // Allow create only if the doc doesn't exist and username is valid internal one
+      allow create: if username in ['architect', 'builder'];
+      allow update, delete: if false;
+    }
+
+    // Default deny for everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

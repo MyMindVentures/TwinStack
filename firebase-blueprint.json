@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "Metadata for an app project",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "architectId": { "type": "string" }
+      },
+      "required": ["title", "description", "createdAt", "architectId"]
+    },
+    "Request": {
+      "title": "Request",
+      "description": "A feature request from the Architect to the Builder",
+      "type": "object",
+      "properties": {
+        "nonTechDescription": { "type": "string" },
+        "techDescription": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["draft", "approved"] },
+        "projectId": { "type": "string" }
+      },
+      "required": ["nonTechDescription", "techDescription", "timestamp", "status", "projectId"]
+    },
+    "InternalUser": {
+      "title": "Internal User",
+      "description": "Internal account with username and hashed password",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "role": { "type": "string" },
+        "passwordHash": { "type": "string" }
+      },
+      "required": ["username", "role", "passwordHash"]
+    },
+    "VibecoderProfile": {
+      "title": "Vibecoder Profile",
+      "description": "Guest profile and account details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "country": { "type": "string" },
+        "gender": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "purpose": { "type": "string" },
+        "twitter": { "type": "string" },
+        "github": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["name", "email", "uid"]
+    }
+  },
+  "firestore": {
+    "/projects": {
+      "schema": "Project",
+      "description": "Top-level collection of projects"
+    },
+    "/projects/{projectId}/requests": {
+      "schema": "Request",
+      "description": "Requests within a specific project"
+    },
+    "/internal_users": {
+      "schema": "InternalUser",
+      "description": "Internal staff accounts"
+    },
+    "/vibecoder_profiles": {
+      "schema": "VibecoderProfile",
+      "description": "Profiles for registered guests"
+    }
+  }
+}
