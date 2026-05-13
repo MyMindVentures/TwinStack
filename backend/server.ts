@@ -76,6 +76,88 @@ db.exec(`
   );
 `);
 
+function seedTwinStackCoreData() {
+  console.log("Seeding TwinStack Core Data...");
+  try {
+    const existingRow = db.prepare("PRAGMA table_info(projects)").all() as any[];
+    const columns = existingRow.map(c => c.name);
+    if (!columns.includes('is_default_public_project')) {
+      db.exec(`ALTER TABLE projects ADD COLUMN is_default_public_project INTEGER DEFAULT 0;`);
+    }
+    if (!columns.includes('protected_from_deletion')) {
+      db.exec(`ALTER TABLE projects ADD COLUMN protected_from_deletion INTEGER DEFAULT 0;`);
+    }
+
+    const existingProject = db.prepare("SELECT id FROM projects WHERE slug = 'twinstack'").get() as any;
+    const projectId = existingProject ? existingProject.id : "twinstack";
+
+    db.prepare(`
+      INSERT INTO projects (id, slug, title, description, owner, type, visibility, status, created_by_role, is_public_global_project, always_visible, architect_id, is_default_public_project, protected_from_deletion)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(slug) DO UPDATE SET 
+        title = excluded.title,
+        description = excluded.description,
+        owner = excluded.owner,
+        type = excluded.type,
+        visibility = excluded.visibility,
+        status = excluded.status,
+        created_by_role = excluded.created_by_role,
+        is_public_global_project = excluded.is_public_global_project,
+        always_visible = excluded.always_visible,
+        is_default_public_project = excluded.is_default_public_project,
+        protected_from_deletion = excluded.protected_from_deletion
+    `).run(
+      projectId,
+      "twinstack",
+      "TwinStack",
+      "TwinStack is the official build-in-public project where Parallax Studio improves the platform in real time.",
+      "Parallax Studio",
+      "build-in-public",
+      "public-read",
+      "active",
+      "architect",
+      1,
+      1,
+      "architect-id",
+      1,
+      1
+    );
+
+    const featuredRequests = [
+      { id: "login-roles", nonTech: "Add login cards for The Architect, The Builder and Vibecoder Guest.", tech: "Implement role-based login entry with architect, builder and vibecoder guest flows." },
+      { id: "project-dashboard", nonTech: "Add dashboard where users can view and select app projects.", tech: "Implement project list query with TwinStack always included as global public project." },
+      { id: "new-app-concept", nonTech: "Let The Architect create app concepts with title and description.", tech: "Add concept creation modal with title and max 1500-character description field." },
+      { id: "splitview-workspace", nonTech: "Show request input on the left and Builder queue on the right.", tech: "Implement responsive splitview workspace with composer and approved request queue." },
+      { id: "ai-request-structuring", nonTech: "Turn raw ideas into clear non-technical and technical request summaries.", tech: "Add AI structuring output with max 250 chars for each summary field." },
+      { id: "approve-to-queue", nonTech: "Let The Architect approve structured requests into The Builder queue.", tech: "Save approved request cards to the project queue with timestamp and status." },
+      { id: "builder-popup", nonTech: "Notify The Builder when a new approved request arrives.", tech: "Trigger builder notification popup after approved request creation." },
+      { id: "vibecoder-onboarding", nonTech: "Guests accept terms and create a profile before viewing TwinStack.", tech: "Implement terms acceptance, guest account creation and vibecoder profile data." },
+      { id: "guest-readonly-view", nonTech: "Vibecoder Guests can follow TwinStack in real time without editing.", tech: "Restrict guest role to read-only access for TwinStack with fork/branch placeholder actions." },
+      { id: "landing-legal-support", nonTech: "Add landing page, founder story, legal protection and support section.", tech: "Implement landing page sections, terms flow, copyright notice and support CTA." }
+    ];
+
+    const insertRequest = db.prepare(`
+      INSERT INTO requests (id, project_id, non_tech_description, tech_description, status, timestamp, implemented)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        non_tech_description = excluded.non_tech_description,
+        tech_description = excluded.tech_description,
+        status = excluded.status,
+        implemented = excluded.implemented
+    `);
+
+    let newCount = 0;
+    for (const req of featuredRequests) {
+      const res = insertRequest.run(req.id, projectId, req.nonTech, req.tech, "approved", new Date().toISOString(), 1);
+      if (res.changes > 0) newCount++;
+    }
+
+    console.log("TwinStack seed completed");
+  } catch (error) {
+    console.error("TwinStack seed error:", error);
+  }
+}
+
 function seedDatabase() {
   console.log("Seeding Database...");
   
@@ -116,108 +198,8 @@ function seedDatabase() {
 
 
 
-  // Seed default project
-  const insertProject = db.prepare(`
-    INSERT OR IGNORE INTO projects (id, slug, title, description, owner, type, visibility, status, created_by_role, is_public_global_project, always_visible, architect_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  insertProject.run(
-    "twinstack-default",
-    "twinstack",
-    "TwinStack",
-    "TwinStack is the public build-in-progress project where Vibecoder Guests can follow every request, upgrade and execution step in real time.",
-    "Parallax Studio",
-    "build-in-public",
-    "public-read",
-    "active",
-    "architect",
-    1,
-    1,
-    "architect-id"
-  );
-
-  // Seed welcome request
-  const insertRequest = db.prepare(`
-    INSERT OR IGNORE INTO requests (id, project_id, non_tech_description, tech_description, status, timestamp, implemented)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  insertRequest.run(
-    "welcome-request-twinstack",
-    "twinstack-default",
-    "Welcome to TwinStack build-in-public. Follow how The Architect and The Builder improve this platform in real time.",
-    "Initialize default TwinStack public project with guest-readable request queue and role-based access.",
-    "approved",
-    new Date().toISOString(),
-    1
-  );
-
-  // Seed 10 implemented features
-  const featuredRequests = [
-    {
-      id: "feat-1",
-      nonTech: "Add fixed login cards for The Architect, The Builder and Vibecoder Guest.",
-      tech: "Implement role-based login entry with separate access flows for architect, builder and vibecoder guest."
-    },
-    {
-      id: "feat-2",
-      nonTech: "Add dashboard where internal users can view app projects and create new concepts.",
-      tech: "Implement project dashboard with project list, active project selection and new project creation modal."
-    },
-    {
-      id: "feat-3",
-      nonTech: "Let The Architect create a new app concept with title and description.",
-      tech: "Add modal with title input and 1500-character description field linked to project creation."
-    },
-    {
-      id: "feat-4",
-      nonTech: "Show request input on the left and Builder queue on the right inside each project.",
-      tech: "Implement responsive splitview layout with request composer and approved request queue."
-    },
-    {
-      id: "feat-5",
-      nonTech: "Convert raw Architect requests into clear non-technical and technical descriptions.",
-      tech: "Add AI structuring step returning max 250-char nonTechnicalDescription and max 250-char technicalDescription."
-    },
-    {
-      id: "feat-6",
-      nonTech: "Let The Architect approve structured requests before they appear for The Builder.",
-      tech: "Add approve flow that saves approved request cards to the project queue with timestamp."
-    },
-    {
-      id: "feat-7",
-      nonTech: "Notify The Builder when a new approved request is added.",
-      tech: "Implement new request popup for builder role triggered by approved request creation."
-    },
-    {
-      id: "feat-8",
-      nonTech: "Require guests to accept terms and create a profile before viewing TwinStack.",
-      tech: "Add terms acceptance, guest account creation and vibecoder profile form with photo and social links."
-    },
-    {
-      id: "feat-9",
-      nonTech: "Let Vibecoder Guests follow the TwinStack project in real time without editing anything.",
-      tech: "Restrict guest role to read-only access for projectSlug twinstack and show request cards with fork/branch buttons."
-    },
-    {
-      id: "feat-10",
-      nonTech: "Add a professional landing page, founder story, copyright, terms and support section.",
-      tech: "Implement landing page sections, legal pages, copyright notice, terms flow and support/donation CTA."
-    }
-  ];
-
-  for (const req of featuredRequests) {
-    insertRequest.run(
-      req.id,
-      "twinstack-default",
-      req.nonTech,
-      req.tech,
-      "approved",
-      new Date().toISOString(),
-      1
-    );
-  }
+  // Call the robust seed function for TwinStack
+  seedTwinStackCoreData();
 }
 
 async function startServer() {
@@ -253,6 +235,20 @@ async function startServer() {
 
   // Seed database on startup
   seedDatabase();
+
+  // Admin repair route
+  appExpress.post("/api/seed/twinstack", (req, res) => {
+    const user = (req.session as any).user;
+    if (!user || user.role !== "Architect") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    try {
+      seedTwinStackCoreData();
+      res.json({ success: true, message: "TwinStack seed completed by admin" });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
 
   // Auth Routes
   appExpress.post("/api/auth/login", async (req, res) => {
@@ -380,91 +376,7 @@ async function startServer() {
     
     try {
       // Ensure TwinStack project exists
-      const twinstackExists = db.prepare("SELECT id FROM projects WHERE slug = 'twinstack' OR id = 'twinstack-default'").get();
-      if (!twinstackExists) {
-        {
-          const existingRow = db.prepare("PRAGMA table_info(projects)").all() as any[];
-          const columns = existingRow.map(c => c.name);
-          if (!columns.includes('is_default_public_project')) {
-            db.exec(`ALTER TABLE projects ADD COLUMN is_default_public_project INTEGER DEFAULT 0;`);
-          }
-          if (!columns.includes('protected_from_deletion')) {
-            db.exec(`ALTER TABLE projects ADD COLUMN protected_from_deletion INTEGER DEFAULT 0;`);
-          }
-        }
-
-        db.prepare(`
-          INSERT INTO projects (id, slug, title, description, owner, type, visibility, status, created_by_role, is_public_global_project, always_visible, architect_id, is_default_public_project, protected_from_deletion)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          "twinstack-default",
-          "twinstack",
-          "TwinStack",
-          "TwinStack is the official build-in-public project where users can follow how Parallax Studio improves the platform in real time.",
-          "Parallax Studio",
-          "build-in-public",
-          "public-read",
-          "active",
-          "architect",
-          1,
-          1,
-          "architect-id",
-          1,
-          1
-        );
-      } else {
-        // Force update flags on existing TwinStack project to ensure visibility
-        db.prepare(`
-          UPDATE projects 
-          SET 
-            title = 'TwinStack',
-            slug = 'twinstack',
-            description = 'TwinStack is the official build-in-public project where users can follow how Parallax Studio improves the platform in real time.',
-            owner = 'Parallax Studio',
-            type = 'build-in-public',
-            visibility = 'public-read',
-            status = 'active',
-            is_public_global_project = 1, 
-            always_visible = 1
-          WHERE slug = 'twinstack' OR id = 'twinstack-default'
-        `).run();
-      }
-
-      // Also seed the 10 requests if missing
-      const requestCount = db.prepare("SELECT COUNT(*) as count FROM requests WHERE project_id = 'twinstack-default'").get();
-      if ((requestCount as any).count === 0) {
-        const insertRequest = db.prepare(`
-          INSERT OR IGNORE INTO requests (id, project_id, non_tech_description, tech_description, status, timestamp, implemented)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
-        
-        insertRequest.run(
-          "welcome-request-twinstack",
-          "twinstack-default",
-          "Welcome to TwinStack build-in-public. Follow how The Architect and The Builder improve this platform in real time.",
-          "Initialize default TwinStack public project with guest-readable request queue and role-based access.",
-          "approved",
-          new Date().toISOString(),
-          1
-        );
-
-        const featuredRequests = [
-          { id: "feat-1", nonTech: "Add fixed login cards for The Architect, The Builder and Vibecoder Guest.", tech: "Implement role-based login entry with separate access flows for architect, builder and vibecoder guest." },
-          { id: "feat-2", nonTech: "Add dashboard where internal users can view app projects and create new concepts.", tech: "Implement project dashboard with project list, active project selection and new project creation modal." },
-          { id: "feat-3", nonTech: "Let The Architect create a new app concept with title and description.", tech: "Add modal with title input and 1500-character description field linked to project creation." },
-          { id: "feat-4", nonTech: "Show request input on the left and Builder queue on the right inside each project.", tech: "Implement responsive splitview layout with request composer and approved request queue." },
-          { id: "feat-5", nonTech: "Convert raw Architect requests into clear non-technical and technical descriptions.", tech: "Add AI structuring step returning max 250-char nonTechnicalDescription and max 250-char technicalDescription." },
-          { id: "feat-6", nonTech: "Let The Architect approve structured requests before they appear for The Builder.", tech: "Add approve flow that saves approved request cards to the project queue with timestamp." },
-          { id: "feat-7", nonTech: "Notify The Builder when a new approved request is added.", tech: "Implement new request popup for builder role triggered by approved request creation." },
-          { id: "feat-8", nonTech: "Require guests to accept terms and create a profile before viewing TwinStack.", tech: "Add terms acceptance, guest account creation and vibecoder profile form with photo and social links." },
-          { id: "feat-9", nonTech: "Let Vibecoder Guests follow the TwinStack project in real time without editing anything.", tech: "Restrict guest role to read-only access for projectSlug twinstack and show request cards with fork/branch buttons." },
-          { id: "feat-10", nonTech: "Add a professional landing page, founder story, copyright, terms and support section.", tech: "Implement landing page sections, legal pages, copyright notice, terms flow and support/donation CTA." }
-        ];
-
-        for (const req of featuredRequests) {
-          insertRequest.run(req.id, "twinstack-default", req.nonTech, req.tech, "approved", new Date().toISOString(), 1);
-        }
-      }
+      seedTwinStackCoreData();
 
       const projects = db.prepare(`
         SELECT 

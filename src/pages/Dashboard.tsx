@@ -101,12 +101,34 @@ export default function Dashboard({ role, onLogout }: DashboardProps) {
             </p>
           </div>
         </div>
-        <button
-          onClick={onLogout}
-          className="p-2 text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <LogOut className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-4">
+          {role === 'Architect' && (
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/seed/twinstack", { method: "POST" });
+                  if (res.ok) {
+                    alert("TwinStack seed sorted successfully.");
+                    fetchProjects();
+                  } else {
+                    alert("Failed to run seed.");
+                  }
+                } catch (e) {
+                  alert("Error running seed.");
+                }
+              }}
+              className="text-[10px] font-bold text-blue-400 border border-blue-400/30 bg-blue-400/10 px-3 py-1.5 rounded uppercase tracking-widest hover:bg-blue-400/20 transition-colors"
+            >
+              Repair TwinStack Seed
+            </button>
+          )}
+          <button
+            onClick={onLogout}
+            className="p-2 text-text-secondary hover:text-text-primary transition-colors"
+          >
+            <LogOut className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
