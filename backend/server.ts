@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
 import session from "express-session";
 import cookieParser from "cookie-parser";
@@ -36,6 +37,7 @@ db.exec(`
     email TEXT UNIQUE,
     role TEXT NOT NULL,
     password_hash TEXT NOT NULL,
+    password_changed_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -244,59 +246,54 @@ function seedTwinStackCoreData() {
 function seedDatabase() {
   console.log("Seeding Database...");
 
-  // Read seeded passwords from env or use defaults (dev only)
-  const architectPassword =
-    process.env.ARCHITECT_PASSWORD || "TwinStack_Architect!2026_Parallax#Orbit";
-  const builderPassword =
-    process.env.BUILDER_PASSWORD || "TwinStack_Builder!2026_Forge#Vertex";
-  const subscriberPassword = process.env.SUBSCRIBER_PASSWORD || "password";
-
-  if (!process.env.ARCHITECT_PASSWORD || !process.env.BUILDER_PASSWORD) {
-    console.warn(
-      "⚠️  WARNING: ARCHITECT_PASSWORD / BUILDER_PASSWORD not set in env. Using default dev passwords. Set them in production!"
-    );
+  // Ensure password_changed_at column exists (migration for existing DBs)
+  const userCols = db.prepare("PRAGMA table_info(users)").all() as any[];
+  if (!userCols.find((c: any) => c.name === "password_changed_at")) {
+    db.exec(`ALTER TABLE users ADD COLUMN password_changed_at DATETIME;`);
   }
 
-  const architect = {
-    id: "architect-id",
-    username: "architect",
-    role: "Architect",
-    password: architectPassword,
-  };
-
-  const builder = {
-    id: "builder-id",
-    username: "builder",
-    role: "Builder",
-    password: builderPassword,
-  };
-
-  const subscriber = {
-    id: "subscriber-id",
-    username: "subscriber",
-    email: "subscriber@example.com",
-    role: "Subscribed User",
-    password: subscriberPassword,
-  };
+  // -----------------------------------------------------------------------
+  // Database-only password management
+  // Passwords are generated on first seed and printed to the console.
+  // After that, passwords live exclusively in the DB (bcrypt hashed).
+  // Use the Change Password flow in the app to update them.
+  // -----------------------------------------------------------------------
+  const seededUsers = [
+    { id: "architect-id", username: "architect", email: null, role: "Architect" },
+    { id: "builder-id", username: "builder", email: null, role: "Builder" },
+    { id: "subscriber-id", username: "subscriber", email: "subscriber@example.com", role: "Subscribed User" },
+  ];
 
   const insertUser = db.prepare(`
     INSERT OR IGNORE INTO users (id, username, email, role, password_hash)
     VALUES (?, ?, ?, ?, ?)
   `);
 
-  for (const user of [architect, builder]) {
-    const hash = bcrypt.hashSync(user.password, 10);
-    insertUser.run(user.id, user.username, null, user.role, hash);
+  const newlyCreated: { role: string; username: string; password: string }[] = [];
+
+  for (const user of seededUsers) {
+    const existing = db.prepare("SELECT id FROM users WHERE id = ?").get(user.id);
+    if (!existing) {
+      // Generate a secure random password for first-time setup
+      const tempPassword = crypto.randomBytes(16).toString("base64url");
+      const hash = bcrypt.hashSync(tempPassword, 10);
+      insertUser.run(user.id, user.username, user.email, user.role, hash);
+      newlyCreated.push({ role: user.role, username: user.username, password: tempPassword });
+    }
   }
 
-  const subHash = bcrypt.hashSync(subscriber.password, 10);
-  insertUser.run(
-    subscriber.id,
-    subscriber.username,
-    subscriber.email,
-    subscriber.role,
-    subHash
-  );
+  if (newlyCreated.length > 0) {
+    console.log("\n" + "=".repeat(72));
+    console.log("  🔐  INITIAL CREDENTIALS — CHANGE THESE AFTER FIRST LOGIN");
+    console.log("=".repeat(72));
+    for (const cred of newlyCreated) {
+      console.log(`  ${cred.role.padEnd(18)} username: ${cred.username.padEnd(14)} password: ${cred.password}`);
+    }
+    console.log("=".repeat(72));
+    console.log("  These passwords are stored as bcrypt hashes in the database.");
+    console.log("  Use Settings > Change Password in the app to update them.");
+    console.log("=".repeat(72) + "\n");
+  }
 
   // Call the robust seed function for TwinStack
   seedTwinStackCoreData();
@@ -420,6 +417,7 @@ async function startServer() {
         username: user.username || null,
         email: user.email || null,
         role: user.role,
+        passwordChangedAt: user.password_changed_at || null,
       };
 
       (req.session as any).user = sessionUser;
@@ -504,6 +502,58 @@ async function startServer() {
       res.clearCookie("twinstack_sid");
       res.json({ success: true });
     });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Change Password — database-only password management
+  // ---------------------------------------------------------------------------
+  appExpress.post("/api/auth/change-password", async (req, res) => {
+    const sessionUser = (req.session as any).user;
+    if (!sessionUser) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Current password and new password are required" });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: "New password must be at least 8 characters" });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ error: "New password must be different from current password" });
+    }
+
+    try {
+      const user = db
+        .prepare("SELECT * FROM users WHERE id = ?")
+        .get(sessionUser.uid) as any;
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const isMatch = bcrypt.compareSync(currentPassword, user.password_hash);
+      if (!isMatch) {
+        return res.status(401).json({ error: "Current password is incorrect" });
+      }
+
+      const newHash = bcrypt.hashSync(newPassword, 12);
+      const now = new Date().toISOString();
+      db.prepare(
+        "UPDATE users SET password_hash = ?, password_changed_at = ? WHERE id = ?"
+      ).run(newHash, now, sessionUser.uid);
+
+      // Update session to reflect the change
+      (req.session as any).user.passwordChangedAt = now;
+
+      console.log(`🔐 Password changed for user: ${sessionUser.username || sessionUser.email} (${sessionUser.role})`);
+      res.json({ success: true, passwordChangedAt: now });
+    } catch (error) {
+      console.error("Change password error:", error);
+      res.status(500).json({ error: "Failed to change password" });
+    }
   });
 
   // Terms Acceptance
