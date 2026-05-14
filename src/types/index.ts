@@ -6,10 +6,18 @@ export type UserRole =
 
 export interface Project {
   id: string;
+  slug: string;
   title: string;
   description: string;
-  createdAt: any; // Firestore Timestamp
+  owner?: string;
+  type?: string;
+  visibility?: string;
+  status?: string;
+  createdByRole?: string;
+  isPublicGlobalProject?: number;
+  alwaysVisible?: number;
   architectId: string;
+  createdAt: string;
 }
 
 export interface Request {
@@ -17,8 +25,9 @@ export interface Request {
   projectId: string;
   nonTechDescription: string;
   techDescription: string;
-  timestamp: any; // Firestore Timestamp
-  status: "draft" | "approved";
+  timestamp: string;
+  status: "pending" | "draft" | "approved";
+  implemented?: number;
 }
 
 export interface UserProfile {
@@ -37,5 +46,5 @@ export interface VibecoderProfile {
   twitter?: string;
   github?: string;
   photoUrl?: string;
-  createdAt: any;
+  createdAt: string;
 }

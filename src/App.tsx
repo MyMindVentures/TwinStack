@@ -11,7 +11,7 @@ import ProjectView from "./pages/ProjectView";
 import Landing from "./pages/Landing";
 import Terms from "./pages/Terms";
 import VibecoderSetup from "./pages/VibecoderSetup";
-import { UserRole } from "./types";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { authService, AuthUser } from "./services/authService";
 
 export default function App() {
@@ -39,44 +39,46 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <div className="min-h-screen bg-bg-primary text-text-primary font-sans selection:bg-purple-500/20 selection:text-purple-200">
-        <Routes>
-          <Route
-            path="/login"
-            element={
-              user ? (
-                <Navigate to="/dashboard" />
-              ) : (
-                <Login onSelectRole={() => {}} />
-              )
-            }
-          />
-          <Route
-            path="/vibecoder-setup"
-            element={<VibecoderSetup onSelectRole={() => {}} />}
-          />
-          <Route
-            path="/dashboard"
-            element={
-              user ? (
-                <Dashboard role={user.role} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            path="/project/:projectId"
-            element={
-              user ? <ProjectView role={user.role} /> : <Navigate to="/login" />
-            }
-          />
-          <Route path="/" element={<Landing />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </div>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <div className="min-h-screen bg-bg-primary text-text-primary font-sans selection:bg-purple-500/20 selection:text-purple-200">
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                user ? (
+                  <Navigate to="/dashboard" />
+                ) : (
+                  <Login />
+                )
+              }
+            />
+            <Route
+              path="/vibecoder-setup"
+              element={<VibecoderSetup />}
+            />
+            <Route
+              path="/dashboard"
+              element={
+                user ? (
+                  <Dashboard role={user.role} onLogout={handleLogout} />
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+            <Route
+              path="/project/:projectId"
+              element={
+                user ? <ProjectView role={user.role} /> : <Navigate to="/login" />
+              }
+            />
+            <Route path="/" element={<Landing />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }

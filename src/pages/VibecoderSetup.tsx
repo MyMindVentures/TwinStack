@@ -18,12 +18,7 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { UserRole } from "../types";
 import { authService } from "../services/authService";
-
-interface VibecoderSetupProps {
-  onSelectRole: (role: UserRole) => void;
-}
 
 const countries = [
   "United States",
@@ -65,7 +60,7 @@ const purposes = [
   "Other (please specify below)",
 ];
 
-export default function VibecoderSetup({ onSelectRole }: VibecoderSetupProps) {
+export default function VibecoderSetup() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -120,8 +115,7 @@ export default function VibecoderSetup({ onSelectRole }: VibecoderSetupProps) {
 
       await authService.signup(formData.email, formData.password, profile);
 
-      // 3. Set Role & Redirect
-      onSelectRole("Vibecoder Guest");
+      // 3. Redirect to dashboard
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Registration failed:", error);

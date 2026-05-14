@@ -16,6 +16,7 @@ Please review the strict guidelines and architecture before working on this proj
 - [PROJECT_BRIEF.md](./PROJECT_BRIEF.md) - Product motivation and workflows.
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture and setup.
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - SQLite definitions.
+- [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - Visual identity and design tokens.
 - [PRODUCT_RULES.md](./PRODUCT_RULES.md) - Product boundaries and feature scopes.
 - [SECURITY_AND_LEGAL.md](./SECURITY_AND_LEGAL.md) - Copyright and role protection.
 - [TESTING.md](./TESTING.md) - QA Checklists and testing methodologies.
@@ -42,6 +43,7 @@ TwinStack is built on the philosophy that **clarity is speed**. By strictly sepa
 ## 🚀 Key Features
 - **Project Pulse**: Real-time request tracking and status updates.
 - **Architectural Specs**: Detailed non-tech and technical requirement pairing.
+- **AI Restructuring**: Gemini-powered conversion of raw ideas into structured specs.
 - **Minimalist Dashboard**: Focused, high-performance UI designed for productivity.
 - **Mobile-First Precision**: Fully optimized for the modern, multi-device developer.
 - **Build-in-Public**: Transparent execution logs for community trust.
@@ -49,10 +51,11 @@ TwinStack is built on the philosophy that **clarity is speed**. By strictly sepa
 ---
 
 ## 💻 Tech Stack
-- **Frontend**: React 18+ (Vite), Tailwind CSS, Framer Motion (motion/react).
-- **Backend**: Node.js (Express) via `server.ts`.
-- **Database**: Firebase (Firestore) with ABAC Security Rules.
-- **Auth**: Firebase Authentication (Google & Internal Staff).
+- **Frontend**: React 19 (Vite 6), Tailwind CSS 4, `motion/react`, `lucide-react`.
+- **Backend**: Node.js (Express 4) via `backend/server.ts`.
+- **Database**: SQLite (`better-sqlite3`) with session persistence.
+- **Auth**: Session-based authentication (`express-session` + `bcryptjs`).
+- **AI**: Google Gemini API (`@google/genai`) for request restructuring.
 
 ---
 
@@ -75,7 +78,7 @@ TwinStack is built on the philosophy that **clarity is speed**. By strictly sepa
 3. Set up environment variables:
    ```bash
    cp .env.example .env
-   # Add your Firebase credentials
+   # Add your GEMINI_API_KEY
    ```
 
 ### Execution
@@ -85,16 +88,45 @@ TwinStack is built on the philosophy that **clarity is speed**. By strictly sepa
 
 ---
 
+## 🚀 Railway Deployment
+
+### 1. Create a Railway Project
+- Connect your GitHub repository in the Railway dashboard.
+- Railway will auto-detect the Node.js setup and use `railway.json`.
+
+### 2. Attach a Persistent Volume
+- In your Railway service settings, add a **Volume**.
+- Set the mount path to `/data` (or any path you prefer).
+- This ensures `twinstack.db` and `sessions.db` persist across deploys.
+
+### 3. Set Environment Variables
+In the Railway dashboard, add these required variables:
+
+| Variable | Required | Description |
+| :--- | :--- | :--- |
+| `SESSION_SECRET` | ✅ | Random 64+ character string for signing cookies |
+| `GEMINI_API_KEY` | ✅ | Google AI Studio API key |
+| `ARCHITECT_PASSWORD` | ✅ | Secure password for the Architect role |
+| `BUILDER_PASSWORD` | ✅ | Secure password for the Builder role |
+| `SUBSCRIBER_PASSWORD` | Optional | Subscriber test account password |
+| `NODE_ENV` | Auto | Set to `production` by Railway |
+| `PORT` | Auto | Injected by Railway |
+
+### 4. Deploy
+Railway will automatically build and deploy. The app will be available at your Railway-generated domain.
+
+---
+
 ## 📁 Repository Structure
 - `src/`: Core React application logic.
-  - `components/`: Reusable UI components.
+  - `components/`: Reusable UI components (ErrorBoundary, etc.).
   - `pages/`: Route-level page components.
-  - `services/`: API and Firebase service logic.
+  - `services/`: API and AI service logic.
   - `hooks/`: Custom React hooks.
   - `types/`: TypeScript interfaces and enums.
-- `server.ts`: Express backend server.
-- `database/`: Firestore security rules and blueprints.
-- `docs/`: Supplementary documentation.
+  - `lib/`: Utility functions.
+- `backend/server.ts`: Express backend server + SQLite database.
+- `database/`: Schema documentation and blueprints.
 - `legal/`: Legal documents (Terms, License).
 
 ---

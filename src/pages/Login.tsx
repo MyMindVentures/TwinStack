@@ -6,11 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { authService } from "../services/authService";
 
-interface LoginProps {
-  onSelectRole: (role: UserRole) => void;
-}
-
-export default function Login({ onSelectRole }: LoginProps) {
+export default function Login() {
   const navigate = useNavigate();
   const [showPasswordModal, setShowPasswordModal] = useState<UserRole | null>(
     null,
@@ -47,7 +43,6 @@ export default function Login({ onSelectRole }: LoginProps) {
 
     try {
       await authService.login(credentials);
-      onSelectRole(showPasswordModal);
       navigate("/dashboard");
     } catch (err: any) {
       console.error("Login failed:", err);

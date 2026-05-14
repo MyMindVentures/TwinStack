@@ -1,47 +1,29 @@
-import { GoogleGenAI, Type } from "@google/genai";
+/**
+ * AI Request Restructuring Service
+ *
+ * Calls the server-side endpoint that runs Gemini.
+ * The API key is NEVER exposed to the client.
+ */
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
+export interface RestructuredRequest {
+  nonTechDescription: string;
+  techDescription: string;
+}
 
-export async function restructureRequest(requestText: string) {
-  const model = "gemini-3-flash-preview";
+export async function restructureRequest(
+  rawText: string
+): Promise<RestructuredRequest> {
+  const response = await fetch("/api/ai/restructure", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ text: rawText }),
+  });
 
-  const prompt = `Restructure the following request from "The Architect" to "The Builder".
-  Provide two versions:
-  1. Non-technical: A clear summary of WHAT is requested (max 250 characters).
-  2. Technical: A clear summary of HOW to implement it technically (max 250 characters).
-  
-  User Request: "${requestText}"`;
-
-  try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            nonTech: {
-              type: Type.STRING,
-              description: "Non-technical description",
-            },
-            tech: { type: Type.STRING, description: "Technical description" },
-          },
-          required: ["nonTech", "tech"],
-        },
-      },
-    });
-
-    const result = JSON.parse(response.text || "{}");
-    return {
-      nonTechDescription: result.nonTech?.slice(0, 250) || "",
-      techDescription: result.tech?.slice(0, 250) || "",
-    };
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return {
-      nonTechDescription: "Error processing request.",
-      techDescription: "Error processing request.",
-    };
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "AI restructuring failed");
   }
+
+  return response.json();
 }
