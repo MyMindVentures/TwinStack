@@ -640,6 +640,10 @@ User Request: "${text}"`;
     }
 
     const { title, description, visibility } = req.body;
+    if (!title || typeof title !== "string" || !title.trim()) {
+      return res.status(400).json({ error: "Project title is required" });
+    }
+
     try {
       const id = generateId();
       db.prepare(
@@ -649,12 +653,12 @@ User Request: "${text}"`;
       `
       ).run(
         id,
-        title.toLowerCase().replace(/\s+/g, "-"),
-        title,
-        description,
+        title.trim().toLowerCase().replace(/\s+/g, "-"),
+        title.trim(),
+        description || "",
         user.role === "Architect" ? "Parallax Studio" : "Private User",
         "concept",
-        visibility,
+        visibility || "public",
         "active",
         user.role,
         0,
@@ -770,7 +774,7 @@ User Request: "${text}"`;
         INSERT INTO requests (id, project_id, non_tech_description, tech_description, status)
         VALUES (?, ?, ?, ?, ?)
       `
-      ).run(id, project.id, nonTechDescription, techDescription, "pending");
+      ).run(id, project.id, nonTechDescription, techDescription, "approved");
 
       const requestItem = db
         .prepare(
@@ -799,7 +803,21 @@ User Request: "${text}"`;
     }
 
     const { status } = req.body;
+    const validStatuses = ["pending", "draft", "approved", "in_progress", "done", "rejected"];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+      });
+    }
+
     try {
+      const existing = db
+        .prepare("SELECT id FROM requests WHERE id = ?")
+        .get(req.params.requestId);
+      if (!existing) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
       db.prepare("UPDATE requests SET status = ? WHERE id = ?").run(
         status,
         req.params.requestId

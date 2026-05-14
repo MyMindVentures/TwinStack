@@ -44,21 +44,18 @@ export default function ProjectView({ role }: { role: UserRole }) {
         if (projRes.ok) setProject(await projRes.json());
         if (reqRes.ok) {
           const reqs = await reqRes.json();
-          const approvedReqs = reqs.filter(
-            (r: Request) => r.status === "approved",
-          );
-          setRequests(approvedReqs);
+          setRequests(reqs);
 
           if (
             role === "Builder" &&
-            approvedReqs.length > lastRequestCount.current &&
+            reqs.length > lastRequestCount.current &&
             lastRequestCount.current !== 0
           ) {
-            const latest = approvedReqs[0];
+            const latest = reqs[0];
             setNotification(latest.nonTechDescription);
             setTimeout(() => setNotification(null), 5000);
           }
-          lastRequestCount.current = approvedReqs.length;
+          lastRequestCount.current = reqs.length;
         } else {
           console.error("Failed to fetch requests", await reqRes.text());
         }
@@ -304,7 +301,16 @@ export default function ProjectView({ role }: { role: UserRole }) {
                         <div className="text-[10px] font-mono text-text-muted uppercase tracking-tighter">
                           REQ-{String(request.id).slice(-4)}
                         </div>
-                        <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">
+                        <span className={cn(
+                          "text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 border rounded",
+                          request.status === "approved"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : request.status === "pending"
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                              : request.status === "draft"
+                                ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                : "bg-red-500/10 text-red-400 border-red-500/20"
+                        )}>
                           {request.status}
                         </span>
                       </div>
